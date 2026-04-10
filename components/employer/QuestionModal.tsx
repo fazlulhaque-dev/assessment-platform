@@ -191,7 +191,7 @@ export default function QuestionModal({
                   : "Check all correct answers"}
               </p>
               {fields.map((field, idx) => {
-                const optionValue = watch(`options.${idx}.value`);
+                const optionValue = watch(`options.${idx}.value`) ?? "";
                 const correctAnswers = watch("correct_answers") ?? [];
                 const isCorrect = correctAnswers.includes(optionValue);
 
