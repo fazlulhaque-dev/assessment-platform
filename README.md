@@ -1,36 +1,119 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Assessment Platform
+
+A full-stack online assessment platform built with **Next.js 16**, **Supabase**, and **Redux Toolkit**. Employers create and manage timed exams; candidates register, sit, and submit them — with offline resilience via a service worker and IndexedDB.
+
+---
+
+## Features
+
+### Employer
+- Create multi-section exams with configurable time windows, slot limits, duration, and optional negative marking
+- Define question sets with multiple-choice (radio/checkbox) and free-text questions
+- View per-exam candidate registrations and submission status
+
+### Candidate
+- Browse and register for active exams
+- Take exams in a timed, fullscreen-enforced session
+- Answers are saved locally (IndexedDB) and synced to the server; no progress is lost on a brief disconnect
+- Behavioral events (tab switches, fullscreen exits, focus loss) are logged
+
+### General
+- Role-based routing enforced in both middleware and API routes
+- Service worker for offline page caching
+- Toast notifications and accessible UI via shadcn/ui
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| Auth & DB | Supabase (Auth + Postgres) |
+| State | Redux Toolkit |
+| Forms | React Hook Form + Zod |
+| UI | shadcn/ui, Tailwind CSS v4 |
+| Offline | Service Worker + idb-keyval |
+| HTTP | Axios |
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node.js 20+
+- [pnpm](https://pnpm.io/) (`npm i -g pnpm`)
+- A [Supabase](https://supabase.com/) project
+
+### Environment Variables
+
+Create a `.env.local` file in the project root:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://<your-project>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Install & Run
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm install
+pnpm dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Learn More
+### Build for Production
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+pnpm build
+pnpm start
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+```
+app/
+  api/                  # Route handlers (auth, employer, candidate)
+  candidate/            # Candidate pages (dashboard, exam)
+  candidate-login/
+  employer/             # Employer pages (dashboard, exams)
+  employer-login/
+components/
+  candidate/            # ExamScreen, QuestionRenderer
+  employer/             # CreateExamStepper, QuestionModal, QuestionSetManager
+  shared/               # Navbar, LoginForm, AuthHydrator, OfflineBanner
+  ui/                   # shadcn/ui primitives
+hooks/                  # useAuth, useExamSession, useExamTimer, useBehaviorTracking
+lib/
+  supabase/             # Server and client Supabase clients
+  axios.ts              # Axios instance with 401 interceptor
+middleware.ts           # Auth guards and role-based redirects
+store/                  # Redux store, slices (auth, exams, examSession)
+types/                  # Shared TypeScript interfaces
+public/
+  sw.js                 # Service worker
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Database Schema
+
+The application expects the following Supabase tables:
+
+| Table | Key Columns |
+|---|---|
+| `profiles` | `id, role, full_name, email, created_at` |
+| `exams` | `id, employer_id, title, total_candidates, total_slots, start_time, end_time, duration, negative_marking, created_at` |
+| `question_sets` | `id, exam_id, title, created_at` |
+| `questions` | `id, question_set_id, title, type, options, correct_answers, created_at` |
+| `exam_registrations` | `id, exam_id, candidate_id, status, started_at, submitted_at, created_at` |
+| `exam_answers` | `id, registration_id, question_id, answer, created_at` |
+| `behavioral_logs` | `id, registration_id, event_type, logged_at` |
+
+Row-level security (RLS) should be enabled and policies scoped to the authenticated user's role.
+# assessment-platform
