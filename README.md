@@ -3,7 +3,7 @@
 A full-stack **Online Assessment Platform** built with **Next.js 16**, **Supabase**, and **Redux Toolkit**. Employers create and manage timed exams with multi-step forms and question sets; candidates browse, register, and sit exams in a timed fullscreen session — with offline resilience via a Service Worker and IndexedDB.
 
 > **Live Demo:** [https://assessment-platform-rosy.vercel.app/employer-login](https://assessment-platform-rosy.vercel.app/employer-login)
-> **Video Walkthrough:** [Watch on Loom](https://www.loom.com/share/your-video-id-here)
+> **Video Walkthrough:** [Watch on Loom](https://www.loom.com/share/c661f0b429e849158f2ec99b22cef730)
 
 ---
 
