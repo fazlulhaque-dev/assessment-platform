@@ -46,17 +46,23 @@ export default function Navbar() {
             <>
               <Link
                 href="/employer/dashboard"
-                className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+                className={`cn(buttonVariants({ variant: "ghost", size: "sm" })) hidden md:inline-flex items-center`}
               >
                 <LayoutDashboard className="mr-1.5 h-4 w-4" />
                 Dashboard
               </Link>
               <Link
                 href="/employer/exams/create"
-                className={cn(buttonVariants({ size: "sm" }))}
+                className={`cn(buttonVariants({ size: "sm" })) hidden md:inline-flex items-center`}
               >
                 <PlusCircle className="mr-1.5 h-4 w-4" />
                 New Exam
+              </Link>
+              <Link
+                href="/employer/exams/create"
+                className={`cn(buttonVariants({ size: "sm" })) inline-flex md:hidden`}
+              >
+                <PlusCircle className="mr-1.5 h-4 w-4" />
               </Link>
             </>
           )}

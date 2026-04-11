@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle2, ChevronRight, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronRight } from "lucide-react";
 import { QuestionType } from "@/types";
 import QuestionSetManager from "./QuestionSetManager";
 import axiosInstance from "@/lib/axios";
@@ -126,32 +126,45 @@ export default function CreateExamStepper() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Step indicator */}
-      <div className="flex items-center gap-3">
-        {STEPS.map((label, i) => (
-          <div key={label} className="flex items-center gap-2">
-            <div
-              className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
-                i < step
-                  ? "bg-primary text-primary-foreground"
-                  : i === step
-                    ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
-                    : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {i < step ? <CheckCircle2 className="h-4 w-4" /> : i + 1}
+      <div className="flex items-center justify-between ">
+        <div className="flex items-center gap-3">
+          {" "}
+          {STEPS.map((label, i) => (
+            <div key={label} className="flex items-center gap-2">
+              <div
+                className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
+                  i < step
+                    ? "bg-primary text-primary-foreground"
+                    : i === step
+                      ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
+                      : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {i < step ? <CheckCircle2 className="h-4 w-4" /> : i + 1}
+              </div>
+              <span
+                className={`text-sm font-medium ${
+                  i === step ? "text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                {label}
+              </span>
+              {i < STEPS.length - 1 && (
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              )}
             </div>
-            <span
-              className={`text-sm font-medium ${
-                i === step ? "text-foreground" : "text-muted-foreground"
-              }`}
-            >
-              {label}
-            </span>
-            {i < STEPS.length - 1 && (
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
+        <Button
+          type="button"
+          onClick={() => router.push("/employer/dashboard")}
+          variant="outline"
+          size="sm"
+          className="hidden md:inline-flex items-center gap-1"
+        >
+          <ArrowLeft className="mr-1 h-4 w-4" />
+          Back to dashboard
+        </Button>
       </div>
 
       {step === 0 && (
@@ -232,7 +245,7 @@ export default function CreateExamStepper() {
                       setValue("question_type", v as QuestionType)
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -313,7 +326,7 @@ export default function CreateExamStepper() {
                     <Badge
                       variant={negativeMarking ? "destructive" : "outline"}
                     >
-                      {negativeMarking ? "Enabled" : "Disabled"}
+                      {negativeMarking ? "Enabled (0.25/wrong)" : "Disabled"}
                     </Badge>
                   </div>
                 </div>

@@ -1,15 +1,6 @@
 import { Exam } from "@/types";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { Separator } from "@/components/ui/separator";
+import { cn, formatDateTime } from "@/lib/utils";
 import {
   Clock,
   Users,
@@ -17,6 +8,8 @@ import {
   CalendarClock,
   ChevronRight,
   Play,
+  MinusCircle,
+  Layers,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -35,6 +28,21 @@ interface CandidateExamCardProps {
   };
 }
 
+function StatPill({
+  icon: Icon,
+  label,
+}: {
+  icon: React.ElementType;
+  label: string;
+}) {
+  return (
+    <div className="flex items-center gap-1.5 rounded-md bg-muted/60 px-2.5 py-1.5 text-xs text-muted-foreground">
+      <Icon className="h-3.5 w-3.5 shrink-0" />
+      <span>{label}</span>
+    </div>
+  );
+}
+
 export function EmployerExamCard({ exam }: EmployerExamCardProps) {
   const questionCount =
     exam.question_sets?.reduce(
@@ -49,59 +57,92 @@ export function EmployerExamCard({ exam }: EmployerExamCardProps) {
   const isActive = now >= start && now <= end;
   const isUpcoming = now < start;
 
+  const statusConfig = isActive
+    ? {
+        label: "Active",
+        className: "bg-emerald-500/15 text-emerald-600 border-emerald-500/20",
+      }
+    : isUpcoming
+      ? {
+          label: "Upcoming",
+          className: "bg-blue-500/15 text-blue-600 border-blue-500/20",
+        }
+      : {
+          label: "Ended",
+          className: "bg-muted text-muted-foreground border-border",
+        };
+
   return (
-    <Card className="flex flex-col hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-base font-semibold leading-tight line-clamp-2">
+    <div className="group relative flex flex-col rounded-xl border bg-card overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
+      {/* Accent bar */}
+      <div
+        className={cn(
+          "h-1 w-full",
+          isActive
+            ? "bg-emerald-500"
+            : isUpcoming
+              ? "bg-blue-500"
+              : "bg-muted-foreground/30",
+        )}
+      />
+
+      <div className="flex flex-col flex-1 p-4 gap-4">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="font-semibold text-sm leading-snug line-clamp-2 flex-1">
             {exam.title}
-          </CardTitle>
-          <Badge
-            variant={
-              isActive ? "default" : isUpcoming ? "secondary" : "outline"
-            }
-            className="shrink-0"
+          </h3>
+          <span
+            className={cn(
+              "shrink-0 inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium",
+              statusConfig.className,
+            )}
           >
-            {isActive ? "Active" : isUpcoming ? "Upcoming" : "Ended"}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="flex-1 space-y-2 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <Users className="h-4 w-4" />
-          <span>
-            {candidateCount} / {exam.total_candidates} candidates
+            {statusConfig.label}
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <BookOpen className="h-4 w-4" />
-          <span>
-            {exam.question_sets?.length ?? 0} sets · {questionCount} questions
-          </span>
+
+        {/* Stats grid */}
+        <div className="grid grid-cols-2 gap-1.5">
+          <StatPill
+            icon={Users}
+            label={`${candidateCount}/${exam.total_candidates} candidates`}
+          />
+          <StatPill icon={Clock} label={`${exam.duration} min`} />
+          <StatPill
+            icon={Layers}
+            label={`${exam.question_sets?.length ?? 0} sets`}
+          />
+          <StatPill icon={BookOpen} label={`${questionCount} questions`} />
+          <StatPill
+            icon={MinusCircle}
+            label={exam.negative_marking ? "-0.25 per wrong" : "No penalty"}
+          />
         </div>
-        <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4" />
-          <span>{exam.duration} min</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <CalendarClock className="h-4 w-4" />
-          <span>{exam.total_slots} slots</span>
-        </div>
-      </CardContent>
-      <Separator />
-      <CardFooter className="pt-3">
+
+        {/* Time range */}
+        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+          <CalendarClock className="h-3.5 w-3.5 shrink-0" />
+          {formatDateTime(exam.start_time)}
+          {" — "}
+          {formatDateTime(exam.end_time)}
+        </p>
+      </div>
+
+      {/* Footer */}
+      <div className="px-4 pb-4">
         <Link
           href={`/employer/exams/${exam.id}/candidates`}
           className={cn(
             buttonVariants({ variant: "outline", size: "sm" }),
-            "w-full justify-center",
+            "w-full justify-center gap-1",
           )}
         >
           View Candidates
-          <ChevronRight className="ml-1 h-4 w-4" />
+          <ChevronRight className="h-4 w-4" />
         </Link>
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -122,59 +163,84 @@ export function CandidateExamCard({ exam }: CandidateExamCardProps) {
   const isActive = now >= start && now <= end;
   const isUpcoming = now < start;
 
+  const statusConfig = isSubmitted
+    ? {
+        label: "Submitted",
+        className: "bg-muted text-muted-foreground border-border",
+      }
+    : isInProgress
+      ? {
+          label: "In Progress",
+          className: "bg-blue-500/15 text-blue-600 border-blue-500/20",
+        }
+      : isUpcoming
+        ? {
+            label: "Upcoming",
+            className: "bg-amber-500/15 text-amber-600 border-amber-500/20",
+          }
+        : isActive
+          ? {
+              label: "Active",
+              className:
+                "bg-emerald-500/15 text-emerald-600 border-emerald-500/20",
+            }
+          : {
+              label: "Ended",
+              className: "bg-muted text-muted-foreground border-border",
+            };
+
+  const accentColor = isSubmitted
+    ? "bg-muted-foreground/30"
+    : isInProgress
+      ? "bg-blue-500"
+      : isUpcoming
+        ? "bg-amber-500"
+        : isActive
+          ? "bg-emerald-500"
+          : "bg-muted-foreground/30";
+
   return (
-    <Card className="flex flex-col hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-base font-semibold leading-tight line-clamp-2">
+    <div className="group relative flex flex-col rounded-xl border bg-card overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
+      {/* Accent bar */}
+      <div className={cn("h-1 w-full", accentColor)} />
+
+      <div className="flex flex-col flex-1 p-4 gap-4">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="font-semibold text-sm leading-snug line-clamp-2 flex-1">
             {exam.title}
-          </CardTitle>
-          {isSubmitted ? (
-            <Badge variant="secondary">Submitted</Badge>
-          ) : isInProgress ? (
-            <Badge>In Progress</Badge>
-          ) : isUpcoming ? (
-            <Badge variant="secondary">Upcoming</Badge>
-          ) : isActive ? (
-            <Badge variant="default">Active</Badge>
-          ) : (
-            <Badge variant="outline">Ended</Badge>
+          </h3>
+          <span
+            className={cn(
+              "shrink-0 inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium",
+              statusConfig.className,
+            )}
+          >
+            {statusConfig.label}
+          </span>
+        </div>
+
+        {/* Stats grid */}
+        <div className="grid grid-cols-2 gap-1.5">
+          <StatPill icon={Clock} label={`${exam.duration} min`} />
+          <StatPill icon={BookOpen} label={`${totalQuestions} questions`} />
+          <StatPill
+            icon={MinusCircle}
+            label={exam.negative_marking ? "-0.25 per wrong" : "No penalty"}
+          />
+          {isUpcoming && (
+            <StatPill
+              icon={CalendarClock}
+              label={start.toLocaleDateString(undefined, {
+                dateStyle: "medium",
+              })}
+            />
           )}
         </div>
-      </CardHeader>
-      <CardContent className="flex-1 space-y-2 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4" />
-          <span>{exam.duration} min</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <BookOpen className="h-4 w-4" />
-          <span>{totalQuestions} questions</span>
-        </div>
-        {isUpcoming && (
-          <div className="flex items-center gap-2">
-            <CalendarClock className="h-4 w-4" />
-            <span>
-              Starts{" "}
-              {start.toLocaleString(undefined, {
-                dateStyle: "medium",
-                timeStyle: "short",
-              })}
-            </span>
-          </div>
-        )}
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium">Negative Marking:</span>
-          <Badge
-            variant={exam.negative_marking ? "destructive" : "outline"}
-            className="text-xs"
-          >
-            {exam.negative_marking ? "Yes" : "No"}
-          </Badge>
-        </div>
-      </CardContent>
-      <Separator />
-      <CardFooter className="pt-3">
+      </div>
+
+      {/* Footer */}
+      <div className="px-4 pb-4">
         {isSubmitted ? (
           <button
             className={cn(
@@ -193,18 +259,18 @@ export function CandidateExamCard({ exam }: CandidateExamCardProps) {
             )}
             disabled
           >
-            Not Started Yet
+            Starts {formatDateTime(exam?.start_time)}
           </button>
         ) : isActive ? (
           <Link
             href={`/candidate/exam/${exam.id}`}
             className={cn(
               buttonVariants({ size: "sm" }),
-              "w-full justify-center",
+              "w-full justify-center gap-1.5",
             )}
           >
-            <Play className="mr-1.5 h-4 w-4" />
-            {isInProgress ? "Continue" : "Start"}
+            <Play className="h-4 w-4" />
+            {isInProgress ? "Continue Exam" : "Start Exam"}
           </Link>
         ) : (
           <button
@@ -217,7 +283,7 @@ export function CandidateExamCard({ exam }: CandidateExamCardProps) {
             Exam Ended
           </button>
         )}
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 }

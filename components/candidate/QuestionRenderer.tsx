@@ -12,14 +12,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, SkipForward } from "lucide-react";
 
 interface QuestionRendererProps {
   question: Question;
   questionNumber: number;
   totalQuestions: number;
   currentAnswer: string | string[] | undefined;
+  skipped: boolean;
   onAnswer: (answer: string | string[]) => void;
+  onSkip: () => void;
   onPrev: () => void;
   onNext: () => void;
 }
@@ -29,7 +31,9 @@ export default function QuestionRenderer({
   questionNumber,
   totalQuestions,
   currentAnswer,
+  skipped,
   onAnswer,
+  onSkip,
   onPrev,
   onNext,
 }: QuestionRendererProps) {
@@ -65,10 +69,10 @@ export default function QuestionRenderer({
             Question {questionNumber} of {totalQuestions}
           </Badge>
           <Badge
-            variant={isAnswered ? "default" : "secondary"}
-            className="text-xs"
+            variant={isAnswered ? "default" : skipped ? "outline" : "secondary"}
+            className={`text-xs ${skipped && !isAnswered ? "border-amber-400 text-amber-600" : ""}`}
           >
-            {isAnswered ? "Answered" : "Not Answered"}
+            {isAnswered ? "Answered" : skipped ? "Skipped" : "Not Answered"}
           </Badge>
         </div>
         <CardTitle className="text-base font-semibold leading-relaxed">
@@ -160,14 +164,27 @@ export default function QuestionRenderer({
           <ChevronLeft className="mr-1 h-4 w-4" />
           Previous
         </Button>
-        <Button
-          size="sm"
-          onClick={onNext}
-          disabled={questionNumber === totalQuestions}
-        >
-          Next
-          <ChevronRight className="ml-1 h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          {!isAnswered && questionNumber < totalQuestions && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onSkip}
+              className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+            >
+              <SkipForward className="mr-1 h-4 w-4" />
+              Skip
+            </Button>
+          )}
+          <Button
+            size="sm"
+            onClick={onNext}
+            disabled={questionNumber === totalQuestions}
+          >
+            Next
+            <ChevronRight className="ml-1 h-4 w-4" />
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );

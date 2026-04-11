@@ -114,6 +114,14 @@ export default function LoginForm({ role }: LoginFormProps) {
                   {errors.password.message}
                 </p>
               )}
+              <p className="text-xs text-right">
+                <Link
+                  href="#"
+                  className="text-primary hover:underline font-medium"
+                >
+                  Forget password?
+                </Link>
+              </p>
             </div>
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>

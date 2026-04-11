@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export async function POST(
   _request: NextRequest,
@@ -42,9 +42,10 @@ export async function POST(
     );
   }
 
-  // Check if already registered — must come before slot check so returning
-  // candidates are never blocked by their own registration counting toward capacity
-  const { data: existing } = await supabase
+  // Check if already registered — use admin client to bypass RLS on SELECT
+  // so a candidate who already has a row is never blocked by missing policies
+  const adminClient = await createAdminClient();
+  const { data: existing } = await adminClient
     .from("exam_registrations")
     .select("id, status")
     .eq("exam_id", id)
@@ -77,6 +78,16 @@ export async function POST(
     .single();
 
   if (error) {
+    // Unique constraint violation — another request created the row concurrently
+    if (error.code === "23505") {
+      const { data: race } = await adminClient
+        .from("exam_registrations")
+        .select("id, status")
+        .eq("exam_id", id)
+        .eq("candidate_id", user.id)
+        .single();
+      if (race) return NextResponse.json({ data: race });
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

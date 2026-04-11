@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import axiosInstance from "@/lib/axios";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { useAppDispatch } from "@/store/hooks";
 import { startSession } from "@/store/slices/examSessionSlice";
 import { useExamTimer } from "@/hooks/useExamTimer";
 import { useBehaviorTracking } from "@/hooks/useBehaviorTracking";
@@ -40,14 +40,15 @@ export default function ExamScreen({ examId }: ExamScreenProps) {
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  const [skippedQuestions, setSkippedQuestions] = useState<Set<string>>(
+    new Set(),
+  );
   const [violations, setViolations] = useState<
     { type: BehavioralEventType; time: Date }[]
   >([]);
   const [showViolationAlert, setShowViolationAlert] = useState(false);
   const [lastViolation, setLastViolation] =
     useState<BehavioralEventType | null>(null);
-
-  const { registrationId } = useAppSelector((s) => s.examSession);
 
   const {
     currentQuestion,
@@ -139,8 +140,16 @@ export default function ExamScreen({ examId }: ExamScreenProps) {
           toast.info("You have already submitted this exam.");
           router.push("/candidate/dashboard");
         }
-      } catch (err) {
-        toast.error("Failed to load exam. Redirecting...");
+      } catch (err: unknown) {
+        const axiosErr = err as {
+          response?: { data?: { error?: string } };
+          message?: string;
+        };
+        const message =
+          axiosErr?.response?.data?.error ??
+          axiosErr?.message ??
+          "Failed to load exam";
+        toast.error(message);
         router.push("/candidate/dashboard");
       } finally {
         setIsLoading(false);
@@ -177,6 +186,8 @@ export default function ExamScreen({ examId }: ExamScreenProps) {
     );
   }
 
+  const skippedCount = skippedQuestions.size;
+
   const progressPercent = Math.round((answeredCount / totalQuestions) * 100);
 
   return (
@@ -191,6 +202,14 @@ export default function ExamScreen({ examId }: ExamScreenProps) {
             <Badge variant="outline" className="hidden sm:flex">
               {answeredCount}/{totalQuestions} answered
             </Badge>
+            {skippedCount > 0 && (
+              <Badge
+                variant="outline"
+                className="hidden sm:flex border-amber-400 text-amber-600"
+              >
+                {skippedCount} skipped
+              </Badge>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -244,7 +263,21 @@ export default function ExamScreen({ examId }: ExamScreenProps) {
               questionNumber={currentQuestionIndex + 1}
               totalQuestions={totalQuestions}
               currentAnswer={answers[currentQuestion.id]}
-              onAnswer={(answer) => saveAnswer(currentQuestion.id, answer)}
+              skipped={skippedQuestions.has(currentQuestion.id)}
+              onAnswer={(answer) => {
+                saveAnswer(currentQuestion.id, answer);
+                setSkippedQuestions((prev) => {
+                  const next = new Set(prev);
+                  next.delete(currentQuestion.id);
+                  return next;
+                });
+              }}
+              onSkip={() => {
+                setSkippedQuestions((prev) =>
+                  new Set(prev).add(currentQuestion.id),
+                );
+                navigateTo(currentQuestionIndex + 1);
+              }}
               onPrev={() => navigateTo(currentQuestionIndex - 1)}
               onNext={() => navigateTo(currentQuestionIndex + 1)}
             />
@@ -265,7 +298,9 @@ export default function ExamScreen({ examId }: ExamScreenProps) {
                       ? "bg-primary text-primary-foreground"
                       : answers[q.id] !== undefined
                         ? "bg-primary/20 text-primary border border-primary/30"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        : skippedQuestions.has(q.id)
+                          ? "bg-amber-100 text-amber-600 border border-amber-300"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
                   }`}
                 >
                   {idx + 1}
@@ -277,6 +312,10 @@ export default function ExamScreen({ examId }: ExamScreenProps) {
               <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded bg-primary/20 border border-primary/30" />
                 Answered
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="h-3 w-3 rounded bg-amber-100 border border-amber-300" />
+                Skipped
               </div>
               <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded bg-muted" />

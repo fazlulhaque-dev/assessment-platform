@@ -1,11 +1,10 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { EmployerExamCard } from "@/components/shared/ExamCard";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PlusCircle, ClipboardList } from "lucide-react";
 import Link from "next/link";
-import { Exam } from "@/types";
+import EmployerExamList from "@/components/employer/EmployerExamList";
 
 async function ExamsList() {
   const supabase = await createClient();
@@ -27,7 +26,9 @@ async function ExamsList() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <ClipboardList className="h-12 w-12 text-muted-foreground mb-4" />
-        <h2 className="text-lg font-semibold mb-1">No exams yet</h2>
+        <h2 className="text-lg font-semibold mb-1">
+          No online tests available
+        </h2>
         <p className="text-sm text-muted-foreground mb-6">
           Create your first exam to get started
         </p>
@@ -39,16 +40,7 @@ async function ExamsList() {
     );
   }
 
-  return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {(exams as Exam[]).map((exam) => (
-        <EmployerExamCard
-          key={exam.id}
-          exam={exam as Parameters<typeof EmployerExamCard>[0]["exam"]}
-        />
-      ))}
-    </div>
-  );
+  return <EmployerExamList initialExams={exams} />;
 }
 
 function ExamsListSkeleton() {
@@ -73,7 +65,7 @@ export default function EmployerDashboardPage() {
         </div>
         <Link href="/employer/exams/create" className={cn(buttonVariants())}>
           <PlusCircle className="mr-2 h-4 w-4" />
-          New Exam
+          Create Online Test
         </Link>
       </div>
       <Suspense fallback={<ExamsListSkeleton />}>

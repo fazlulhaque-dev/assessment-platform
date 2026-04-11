@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client";
 
 import { useEffect } from "react";
@@ -36,12 +37,28 @@ const questionSchema = z
   })
   .superRefine((data, ctx) => {
     if (data.type === "radio" || data.type === "checkbox") {
-      const filled = (data.options ?? []).filter((o) => o.value.trim());
-      if (filled.length < 2) {
+      const filledOptions = (data.options ?? [])
+        .map((o) => o.value.trim())
+        .filter(Boolean);
+
+      if (filledOptions.length < 2) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "At least 2 options are required",
           path: ["options"],
+        });
+      }
+
+      const correctAnswers = data.correct_answers ?? [];
+      const validCorrectAnswers = correctAnswers.filter((a) =>
+        filledOptions.includes(a),
+      );
+
+      if (validCorrectAnswers.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please select at least one correct answer",
+          path: ["correct_answers"],
         });
       }
     }
@@ -116,13 +133,19 @@ export default function QuestionModal({
   }, [open, initialData, defaultType, reset]);
 
   const onSubmit = (data: FormValues) => {
-    const options = (data.options ?? []).map((o) => o.value).filter(Boolean);
+    const options = (data.options ?? [])
+      .map((o) => o.value.trim())
+      .filter(Boolean);
+    const validCorrectAnswers = (data.correct_answers ?? []).filter((a) =>
+      options.includes(a),
+    );
+
     onSave({
       id: initialData?.id ?? uuidv4(),
       title: data.title,
       type: data.type,
       options,
-      correct_answers: data.correct_answers ?? [],
+      correct_answers: validCorrectAnswers,
     });
   };
 
@@ -150,7 +173,7 @@ export default function QuestionModal({
               value={questionType}
               onValueChange={(v) => setValue("type", v as QuestionType)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -276,6 +299,11 @@ export default function QuestionModal({
                 <Plus className="mr-1.5 h-4 w-4" />
                 Add Option
               </Button>
+              {errors.correct_answers && (
+                <p className="text-xs text-destructive font-medium mt-1">
+                  {errors.correct_answers.message}
+                </p>
+              )}
             </div>
           )}
 
