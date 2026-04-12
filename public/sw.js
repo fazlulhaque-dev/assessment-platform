@@ -1,8 +1,8 @@
 // Service Worker for Offline Mode
 // Caches exam pages and API responses for offline resilience
 
-const CACHE_NAME = "assess-platform-v1";
-const STATIC_ASSETS = ["/", "/candidate-login", "/employer-login"];
+const CACHE_NAME = "assess-platform-v2";
+const STATIC_ASSETS = ["/candidate-login", "/employer-login"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -67,7 +67,24 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Cache-first for static assets
+  // Network-first for navigation requests (HTML pages)
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request).catch(() =>
+        caches.match(event.request).then(
+          (cached) =>
+            cached ??
+            new Response("Offline", {
+              status: 503,
+              headers: { "Content-Type": "text/plain" },
+            }),
+        ),
+      ),
+    );
+    return;
+  }
+
+  // Cache-first for static assets (JS, CSS, fonts, images)
   event.respondWith(
     caches
       .match(event.request)
